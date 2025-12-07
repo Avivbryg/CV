@@ -4,27 +4,67 @@ import matplotlib.pyplot as plt
 import io
 
 # =================== MPT reader (use your original code) ===================
-def read_mpt_bytes(file):
-    text = file.read().decode("latin1")
+def read_mpt_bytes(uploaded_file):
+    """Robust MPT reader for Streamlit file_uploader."""
+    
+    # Read binary content
+    raw = uploaded_file.read()
+
+    # Try decoding safely
+    try:
+        text = raw.decode("latin1", errors="ignore")
+    except:
+        raise ValueError("Cannot decode MPT file as latin1")
+
     lines = text.splitlines()
 
+    # Find header line (robust search)
     header_index = None
     for i, line in enumerate(lines):
         if "Ewe/V" in line and "<I>/mA" in line:
             header_index = i
             break
 
-    header = lines[header_index].split("\t")
-    rows = []
+    if header_index is None:
+        raise ValueError("Could not find MPT header containing Ewe/V and <I>/mA")
 
-    for line in lines[header_index+1:]:
+    header = lines[header_index].split("\t")
+
+    # Parse rows
+    rows = []
+    for line in lines[header_index + 1:]:
         parts = line.split("\t")
         try:
-            rows.append([float(x.replace(",", ".")) for x in parts])
+            row = [float(x.replace(",", ".")) for x in parts]
+            rows.append(row)
         except:
             continue
 
     data = np.array(rows)
+
+    # Helper: find column index
+    def find(*names):
+        for name in names:
+            for i, h in enumerate(header):
+                if name in h:
+                    return i
+        return None
+
+    idx_E   = find("Ewe/V", "Ewe")
+    idx_I   = find("<I>/mA", "I/mA")
+    idx_t   = find("time/s", "time")
+    idx_cyc = find("cycle", "Cycle", "Ns")
+
+    if idx_E is None or idx_I is None:
+        raise ValueError("Cannot find E or I columns in MPT file")
+
+    E = data[:, idx_E]
+    I = data[:, idx_I]
+    t = data[:, idx_t] if idx_t is not None else np.arange(len(E))
+    cyc = data[:, idx_cyc].astype(int) if idx_cyc is not None else np.zeros(len(E), int)
+
+    return E, I, t, cyc
+
 
     def find(*names):
         for name in names:
@@ -83,3 +123,4 @@ if uploaded:
         ax.legend()
         ax.grid(True)
         st.pyplot(fig)
+
