@@ -456,6 +456,3 @@ png_buf = io.BytesIO()
 fig.savefig(png_buf, format="png", dpi=300, bbox_inches="tight")
 st.download_button("📥 Download plot PNG", png_buf.getvalue(),
                    file_name="cv_plot_v1_2.png", mime="image/png")
-```
-
-רוצה שאוסיף גם אפשרות לבחור האם חישוב הפיקים/ΔEpp יתבצע על העקומה המתוקנת (ב-overlap) או על ה-RAW, וגם יצוא טבלת פיקים מסודרת (CSV נפרד)?
