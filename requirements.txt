@@ -1,8 +1,9 @@
 streamlit
 matplotlib
+tkinter
 numpy
 pandas
 scipy
 plotly 
 streamlit-plotly-events
-tkinter 
+ 
